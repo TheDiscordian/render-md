@@ -102,9 +102,9 @@ render-md detects your screen resolution and automatically scales images to fit.
 
 | Images | Max width | Max height |
 |--------|-----------|------------|
-| 0–1    | 65% of screen | 70% of screen |
-| 2–4    | 35% of screen | 35% of screen |
-| 5+     | 22% of screen | 22% of screen |
+| 0–1    | 55% of screen | 60% of screen |
+| 2–4    | 30% of screen | 30% of screen |
+| 5+     | 18% of screen | 18% of screen |
 
 Use `--no-scale` to disable this and let images render at their natural size.
 

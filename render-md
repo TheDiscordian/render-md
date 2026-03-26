@@ -117,14 +117,14 @@ class RenderApp(Gtk.Application):
             screen_w, screen_h = get_screen_size()
             img_count = html_content.count("<img ")
             if img_count <= 1:
-                max_w = f"{int(screen_w * 0.65)}px"
-                max_h = f"{int(screen_h * 0.7)}px"
+                max_w = f"{int(screen_w * 0.55)}px"
+                max_h = f"{int(screen_h * 0.6)}px"
             elif img_count <= 4:
-                max_w = f"{int(screen_w * 0.35)}px"
-                max_h = f"{int(screen_h * 0.35)}px"
+                max_w = f"{int(screen_w * 0.3)}px"
+                max_h = f"{int(screen_h * 0.3)}px"
             else:
-                max_w = f"{int(screen_w * 0.22)}px"
-                max_h = f"{int(screen_h * 0.22)}px"
+                max_w = f"{int(screen_w * 0.18)}px"
+                max_h = f"{int(screen_h * 0.18)}px"
 
         colors = THEMES[self.theme]
         html = HTML_TEMPLATE.format(content=html_content, max_w=max_w, max_h=max_h, **colors)
