@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""Borderless markdown viewer with inline image support using GTK WebKit."""
+"""Borderless markdown viewer with inline image support.
+
+On Linux: uses GTK WebKit for a native borderless window.
+On other platforms: opens in the default browser via a local HTTP server.
+"""
 
 import sys
 import os
+import platform
 import markdown
-import gi
-gi.require_version("Gtk", "3.0")
-gi.require_version("WebKit2", "4.1")
-from gi.repository import Gtk, WebKit2, Gdk
-
 
 THEMES = {
     "dark": {
@@ -89,65 +89,121 @@ th {{ background: {th_bg}; }}
 </html>"""
 
 
-def get_screen_size():
-    """Get the primary monitor's logical resolution (CSS pixels)."""
-    display = Gdk.Display.get_default()
-    if display:
-        monitor = display.get_primary_monitor() or display.get_monitor(0)
-        if monitor:
-            geom = monitor.get_geometry()
-            return geom.width, geom.height
-    return 1920, 1080
+def build_html(md_text, theme="dark", no_scale=False, screen_w=1920, screen_h=1080):
+    """Convert markdown to themed HTML."""
+    html_content = markdown.markdown(md_text, extensions=["fenced_code", "tables"])
 
-
-class RenderApp(Gtk.Application):
-    def __init__(self, md_text, base_uri="file:///tmp/", no_scale=False, theme="dark"):
-        super().__init__(application_id="com.github.render-md")
-        self.md_text = md_text
-        self.base_uri = base_uri
-        self.no_scale = no_scale
-        self.theme = theme
-
-    def do_activate(self):
-        html_content = markdown.markdown(self.md_text, extensions=["fenced_code", "tables"])
-
-        if self.no_scale:
-            max_w, max_h = "none", "none"
+    if no_scale:
+        max_w, max_h = "none", "none"
+    else:
+        img_count = html_content.count("<img ")
+        if img_count <= 1:
+            max_w = f"{int(screen_w * 0.45)}px"
+            max_h = f"{int(screen_h * 0.5)}px"
+        elif img_count <= 4:
+            max_w = f"{int(screen_w * 0.25)}px"
+            max_h = f"{int(screen_h * 0.25)}px"
         else:
+            max_w = f"{int(screen_w * 0.15)}px"
+            max_h = f"{int(screen_h * 0.15)}px"
+
+    colors = THEMES[theme]
+    return HTML_TEMPLATE.format(content=html_content, max_w=max_w, max_h=max_h, **colors)
+
+
+# --- Linux: GTK WebKit backend ---
+
+def run_gtk(md_text, base_uri, no_scale, theme):
+    import gi
+    gi.require_version("Gtk", "3.0")
+    gi.require_version("WebKit2", "4.1")
+    from gi.repository import Gtk, WebKit2, Gdk
+
+    def get_screen_size():
+        display = Gdk.Display.get_default()
+        if display:
+            monitor = display.get_primary_monitor() or display.get_monitor(0)
+            if monitor:
+                geom = monitor.get_geometry()
+                return geom.width, geom.height
+        return 1920, 1080
+
+    class RenderApp(Gtk.Application):
+        def __init__(self):
+            super().__init__(application_id="com.github.render-md")
+
+        def do_activate(self):
             screen_w, screen_h = get_screen_size()
-            img_count = html_content.count("<img ")
-            if img_count <= 1:
-                max_w = f"{int(screen_w * 0.45)}px"
-                max_h = f"{int(screen_h * 0.5)}px"
-            elif img_count <= 4:
-                max_w = f"{int(screen_w * 0.25)}px"
-                max_h = f"{int(screen_h * 0.25)}px"
+            html = build_html(md_text, theme, no_scale, screen_w, screen_h)
+
+            colors = THEMES[theme]
+            bg = colors["bg"]
+            r, g, b = int(bg[1:3], 16) / 255, int(bg[3:5], 16) / 255, int(bg[5:7], 16) / 255
+
+            win_w = min(1025, int(screen_w * 0.75))
+            win_h = min(733, int(screen_h * 0.75))
+
+            win = Gtk.ApplicationWindow(application=self, title="render-md")
+            win.set_default_size(win_w, win_h)
+            win.set_decorated(False)
+            win.set_resizable(True)
+
+            webview = WebKit2.WebView()
+            webview.set_background_color(Gdk.RGBA(r, g, b, 1.0))
+            webview.load_html(html, base_uri)
+
+            win.add(webview)
+            win.connect("key-press-event", lambda w, e: self.quit() if e.keyval in (Gdk.KEY_q, Gdk.KEY_Escape) else None)
+            win.show_all()
+
+    app = RenderApp()
+    app.run([])
+
+
+# --- Non-Linux: browser backend ---
+
+def run_browser(md_text, base_uri, no_scale, theme):
+    import http.server
+    import threading
+    import webbrowser
+
+    html = build_html(md_text, theme, no_scale)
+
+    class Handler(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            if self.path == "/" or self.path == "/index.html":
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.end_headers()
+                self.wfile.write(html.encode())
             else:
-                max_w = f"{int(screen_w * 0.15)}px"
-                max_h = f"{int(screen_h * 0.15)}px"
+                # Serve local files for images
+                filepath = os.path.join(base_uri.replace("file://", ""), self.path.lstrip("/"))
+                if os.path.isfile(filepath):
+                    self.send_response(200)
+                    self.end_headers()
+                    with open(filepath, "rb") as f:
+                        self.wfile.write(f.read())
+                else:
+                    self.send_response(404)
+                    self.end_headers()
 
-        colors = THEMES[self.theme]
-        html = HTML_TEMPLATE.format(content=html_content, max_w=max_w, max_h=max_h, **colors)
+        def log_message(self, format, *args):
+            pass
 
-        bg = colors["bg"]
-        r, g, b = int(bg[1:3], 16) / 255, int(bg[3:5], 16) / 255, int(bg[5:7], 16) / 255
+    server = http.server.HTTPServer(("127.0.0.1", 0), Handler)
+    port = server.server_address[1]
 
-        screen_w, screen_h = get_screen_size()
-        win_w = min(1025, int(screen_w * 0.75))
-        win_h = min(733, int(screen_h * 0.75))
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
 
-        win = Gtk.ApplicationWindow(application=self, title="render-md")
-        win.set_default_size(win_w, win_h)
-        win.set_decorated(False)
-        win.set_resizable(True)
+    webbrowser.open(f"http://127.0.0.1:{port}")
 
-        webview = WebKit2.WebView()
-        webview.set_background_color(Gdk.RGBA(r, g, b, 1.0))
-        webview.load_html(html, self.base_uri)
-
-        win.add(webview)
-        win.connect("key-press-event", lambda w, e: self.quit() if e.keyval in (Gdk.KEY_q, Gdk.KEY_Escape) else None)
-        win.show_all()
+    print(f"Serving at http://127.0.0.1:{port} — press Ctrl+C to stop")
+    try:
+        thread.join()
+    except KeyboardInterrupt:
+        server.shutdown()
 
 
 if __name__ == "__main__":
@@ -180,5 +236,7 @@ if __name__ == "__main__":
         md_text = sys.stdin.read()
         base_uri = "file://" + os.getcwd() + "/"
 
-    app = RenderApp(md_text, base_uri=base_uri, no_scale=no_scale, theme=theme)
-    app.run([])
+    if platform.system() == "Linux":
+        run_gtk(md_text, base_uri, no_scale, theme)
+    else:
+        run_browser(md_text, base_uri, no_scale, theme)

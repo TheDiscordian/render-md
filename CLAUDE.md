@@ -1,6 +1,6 @@
 # render-md
 
-A single-file borderless markdown viewer for Linux using GTK 3 and WebKit2.
+A single-file markdown viewer. Uses GTK 3 and WebKit2 on Linux, falls back to a local HTTP server + default browser on macOS/Windows.
 
 ## Project structure
 
@@ -11,11 +11,10 @@ A single-file borderless markdown viewer for Linux using GTK 3 and WebKit2.
 
 1. Reads a markdown file from the command line argument
 2. Converts to HTML using python-markdown (fenced_code + tables extensions)
-3. Detects screen resolution via GDK monitor API (accounts for scale factor)
-4. Counts `<img` tags and picks image size constraints as a percentage of screen size
-5. Wraps HTML in a dark-themed template
-6. Displays in a borderless GTK window with an embedded WebKit2 webview
-7. Closes on `q` or `Escape` keypress
+3. Counts `<img` tags and picks image size constraints as a percentage of screen size
+4. Wraps HTML in a dark-themed template
+5. On Linux: detects screen resolution via GDK, displays in a borderless GTK/WebKit2 window, closes on `q`/`Escape`
+6. On other platforms: starts a local HTTP server on a random port and opens the default browser
 
 ## Key details
 

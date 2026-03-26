@@ -1,6 +1,6 @@
 # render-md
 
-A minimal, borderless markdown viewer for Linux. Renders markdown files in a dark-themed, floating window using GTK and WebKit. Press `q` or `Escape` to close.
+A minimal markdown viewer. On Linux, renders in a borderless GTK/WebKit window (press `q` or `Escape` to close). On macOS and Windows, opens in your default browser.
 
 <img src="screenshot.png" width="500">
 
@@ -16,9 +16,16 @@ A minimal, borderless markdown viewer for Linux. Renders markdown files in a dar
 ## Dependencies
 
 - Python 3
-- GTK 3 (`gi` — GObject Introspection)
-- WebKit2 4.1 (`gi` — WebKit2)
 - [python-markdown](https://python-markdown.github.io/)
+- **Linux only:** GTK 3 and WebKit2 4.1 (via GObject Introspection)
+
+### macOS / Windows (pip)
+
+```bash
+pip install markdown
+```
+
+No other dependencies needed — render-md opens in your default browser.
 
 ### Arch Linux / CachyOS
 
