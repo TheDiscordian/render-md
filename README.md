@@ -53,6 +53,12 @@ chmod +x ~/.local/bin/render-md
 render-md document.md
 ```
 
+Or pipe markdown directly:
+
+```bash
+echo "# Hello world" | render-md
+```
+
 Press **q** or **Escape** to quit.
 
 ### Options
@@ -85,10 +91,9 @@ for_window [app_id="com.github.render-md"] floating enable, resize set 80ppt 90p
 
 ### Piping from other tools
 
-render-md reads a file path, so write to a temp file first:
-
 ```bash
-echo "# Hello" > /tmp/note.md && render-md /tmp/note.md
+cat notes.md | render-md --light
+curl -s https://example.com/README.md | render-md
 ```
 
 ## Image scaling
