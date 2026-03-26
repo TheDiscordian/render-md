@@ -2,7 +2,7 @@
 
 A minimal, borderless markdown viewer for Linux. Renders markdown files in a dark-themed, floating window using GTK and WebKit. Press `q` or `Escape` to close.
 
-![render-md screenshot](screenshot.png)
+<img src="screenshot.png" width="500">
 
 ## Features
 
@@ -10,7 +10,7 @@ A minimal, borderless markdown viewer for Linux. Renders markdown files in a dar
 - Dark theme with monospace font
 - Fenced code blocks with syntax styling
 - Tables, blockquotes, lists, links
-- Inline images with automatic scaling based on image count
+- Inline images with automatic scaling based on screen resolution and image count
 - Resolves relative image paths from the markdown file's directory
 
 ## Dependencies
@@ -55,6 +55,13 @@ render-md document.md
 
 Press **q** or **Escape** to quit.
 
+### Options
+
+| Flag | Description |
+|------|-------------|
+| `--light` | Use light theme (white background) |
+| `--no-scale` | Disable automatic image scaling |
+
 ### Compositor window rules
 
 render-md works best as a floating window. The window title is `render-md` and the application ID is `com.github.render-md`.
@@ -86,14 +93,16 @@ echo "# Hello" > /tmp/note.md && render-md /tmp/note.md
 
 ## Image scaling
 
-When displaying images, render-md automatically adjusts the maximum image size based on how many images are in the document:
+render-md detects your screen resolution and automatically scales images to fit. The maximum image size is based on both your monitor size and how many images are in the document:
 
-| Images | Max size |
-|--------|----------|
-| 0–1    | 1280x800 |
-| 2–4    | 640x400  |
-| 5+     | 420x260  |
+| Images | Max width | Max height |
+|--------|-----------|------------|
+| 0–1    | 65% of screen | 70% of screen |
+| 2–4    | 35% of screen | 35% of screen |
+| 5+     | 22% of screen | 22% of screen |
+
+Use `--no-scale` to disable this and let images render at their natural size.
 
 ## License
 
-MIT
+[MIT](LICENSE)

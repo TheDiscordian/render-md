@@ -11,10 +11,11 @@ A single-file borderless markdown viewer for Linux using GTK 3 and WebKit2.
 
 1. Reads a markdown file from the command line argument
 2. Converts to HTML using python-markdown (fenced_code + tables extensions)
-3. Counts `<img` tags and picks image size constraints accordingly
-4. Wraps HTML in a dark-themed template
-5. Displays in a borderless GTK window with an embedded WebKit2 webview
-6. Closes on `q` or `Escape` keypress
+3. Detects screen resolution via GDK monitor API (accounts for scale factor)
+4. Counts `<img` tags and picks image size constraints as a percentage of screen size
+5. Wraps HTML in a dark-themed template
+6. Displays in a borderless GTK window with an embedded WebKit2 webview
+7. Closes on `q` or `Escape` keypress
 
 ## Key details
 
@@ -23,6 +24,8 @@ A single-file borderless markdown viewer for Linux using GTK 3 and WebKit2.
 - Default window size: 932x666
 - Base URI is set to the markdown file's directory so relative image paths resolve correctly
 - No external CSS or JS — everything is inlined in the HTML template
+- `--no-scale` flag sets image max-width/max-height to `none` in CSS
+- Falls back to 1920x1080 if screen detection fails
 
 ## Guidelines
 
