@@ -90,14 +90,13 @@ th {{ background: {th_bg}; }}
 
 
 def get_screen_size():
-    """Get the primary monitor's resolution."""
+    """Get the primary monitor's logical resolution (CSS pixels)."""
     display = Gdk.Display.get_default()
     if display:
         monitor = display.get_primary_monitor() or display.get_monitor(0)
         if monitor:
             geom = monitor.get_geometry()
-            scale = monitor.get_scale_factor()
-            return geom.width * scale, geom.height * scale
+            return geom.width, geom.height
     return 1920, 1080
 
 
